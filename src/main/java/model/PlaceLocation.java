@@ -2,12 +2,14 @@ package model;
 
 public class PlaceLocation {
 
-  private double lat;
-  private double lng;
-  private String name;
+  private final double lat;
+  private final double lng;
+  private final String name;
 
-  public PlaceLocation(String name) {
+  public PlaceLocation(String name, double lat, double lng) {
     this.name = name;
+    this.lat = lat;
+    this.lng = lng;
   }
 
   public double getLat() {
@@ -20,5 +22,14 @@ public class PlaceLocation {
 
   public String getName() {
     return name;
+  }
+
+  @Override
+  public String toString() {
+    return "PlaceLocation{" +
+            "lat=" + lat +
+            ", lng=" + lng +
+            ", name='" + name + '\'' +
+            '}';
   }
 }
