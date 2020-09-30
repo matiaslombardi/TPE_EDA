@@ -1,4 +1,5 @@
 import model.BusInPath;
+import model.PathFinder;
 import model.PlaceFinder;
 import model.PlaceLocation;
 
@@ -10,13 +11,17 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Controller {
-  private PlaceFinder placeFinder;
+  private final PlaceFinder placeFinder;
+  private final PathFinder pathFinder;
+
+
   public Controller() throws IOException {
     placeFinder = new PlaceFinder();
+    pathFinder = new PathFinder();
   }
 
   public List<BusInPath> findPath(double fromLat, double fromLng, double toLat, double toLng) {
-    return Arrays.asList(new BusInPath("No implementado", 0, 0, 0, 0));
+    return pathFinder.findPath(fromLat, fromLng, toLat, toLng);
   }
 
   public List<PlaceLocation> findPlaces(String searchTerm) {
