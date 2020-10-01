@@ -1,7 +1,6 @@
-import model.BusInPath;
-import model.PathFinder;
-import model.PlaceFinder;
-import model.PlaceLocation;
+import model.*;
+import readers.PathReader;
+import readers.PlacesReader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,9 +14,16 @@ public class Controller {
   private final PathFinder pathFinder;
 
 
-  public Controller() throws IOException {
-    placeFinder = new PlaceFinder();
-    pathFinder = new PathFinder();
+  public Controller() {
+    PlacesReader placesReader = new PlacesReader();
+    List<PlaceLocation> places = placesReader.readPlaces();
+    if (places == null) System.exit(1);
+    placeFinder = new PlaceFinder(places);
+
+    PathReader pathReader = new PathReader();
+    Graph graph = pathReader.readPaths();
+    pathFinder = new PathFinder(graph);
+
     System.out.println("Finished importing data");
   }
 

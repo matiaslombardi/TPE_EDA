@@ -10,22 +10,11 @@ import java.util.stream.Collectors;
 
 
 public class PlaceFinder {
-    private final List<PlaceLocation> places = new ArrayList<>();
+    private final List<PlaceLocation> places;
     private final QGrams qGrams = new QGrams(3);
 
-    public PlaceFinder() throws IOException {
-        String fileName = "src/main/resources/espacios-culturales.csv";
-        try (FileReader fr = new FileReader(fileName); CSVReader reader = new CSVReader(fr)) {
-            String[] nextLine;
-            reader.readNext();
-            while ((nextLine = reader.readNext()) != null) {
-                PlaceLocation toAdd = new PlaceLocation(nextLine[3], Double.parseDouble(nextLine[13]),
-                        Double.parseDouble(nextLine[14]));
-                places.add(toAdd);
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+    public PlaceFinder(List<PlaceLocation> places) {
+        this.places = places;
     }
 
     public List<PlaceLocation> findPlaces(String query){

@@ -3,6 +3,7 @@ package model;
 import java.util.*;
 
 public class Graph {
+    private static final int PENALTY = 10000;
     List<Node> nodes = new ArrayList<>();
     Map<String, List<Node>> lines = new HashMap<>();
 
@@ -19,8 +20,8 @@ public class Graph {
 
             double dist = s.distanceTo(stop);
             if (dist <= 500) {
-                addEdge(s, stop, dist * 1000);
-                addEdge(stop, s, dist * 1000);
+                addEdge(s, stop, PENALTY+dist);
+                addEdge(stop, s, PENALTY+dist);
             }
         }
     }
@@ -31,14 +32,16 @@ public class Graph {
         if (stops == null)
             return null;
 
-        Node aux = null;
+
         for (Node node: stops) {
-            double cmp = Math.abs(stop.getLat() - node.stop.getLat());
-            if (cmp <= 0.0000001)
-                aux = node;
+            double a = Math.pow(stop.getLat() - node.stop.getLat(), 2);
+            double b = Math.pow(stop.getLon() - node.stop.getLon(), 2);
+            double cmp = Math.sqrt(a+b);
+            if (cmp <= 0.00000001)
+                return node;
         }
 
-        return aux;
+        return null;
     }
 
     public boolean hasStop(BusStop stop) {
@@ -96,18 +99,27 @@ public class Graph {
         }
 
         Node current = end;
-        List<BusInPath> toReturn = new ArrayList<>();
+        LinkedList<BusInPath> toReturn = new LinkedList<>();
         while (current != start) {
-            Node prev = current.from;
             BusStop s1 = current.stop;
+            Node prev = current.from;
             BusStop s2 = prev.stop;
-            System.out.println(s1.getLine());
-            System.out.println(s2.getLine());
-            if (s1.getLine().equals(s2.getLine()))
-                toReturn.add(new BusInPath(s1.getLine(), s2.getLat(), s2.getLon(), s1.getLat(), s1.getLon()));
+            if (!s1.getLine().equals(s2.getLine())) {
+                current = prev;
+                continue;
+            }
 
+            BusStop aux = s2;
+            while (s1.getLine().equals(s2.getLine()) && prev != start) {
+                aux = s2;
+                prev = prev.from;
+                s2 = prev.stop;
+            }
+
+            toReturn.addFirst(new BusInPath(s1.getLine(), aux.getLat(), aux.getLon(), s1.getLat(), s1.getLon()));
             current = prev;
         }
+
         return toReturn;
     }
 
