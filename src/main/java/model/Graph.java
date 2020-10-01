@@ -1,20 +1,21 @@
 package model;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Graph {
     private static final int PENALTY = 10000;
     List<Node> nodes = new ArrayList<>();
     Map<String, List<Node>> lines = new HashMap<>();
 
-    public void addNode(BusStop stop) {
+    public void addNode(Stop stop) {
         Node node = new Node(stop);
         String line = stop.getLine();
         nodes.add(node);
         lines.putIfAbsent(line, new ArrayList<>());
         lines.get(line).add(node);
         for (Node n : nodes) {
-            BusStop s = n.getStop();
+            Stop s = n.getStop();
             if (s.getLine().equals(stop.getLine()))
                 continue;
 
@@ -26,7 +27,7 @@ public class Graph {
         }
     }
 
-    private Node getNode(BusStop stop) {
+    private Node getNode(Stop stop) {
         List<Node> stops = lines.get(stop.getLine());
 
         if (stops == null)
@@ -44,18 +45,18 @@ public class Graph {
         return null;
     }
 
-    public boolean hasStop(BusStop stop) {
+    public boolean hasStop(Stop stop) {
         return getNode(stop) != null;
     }
 
-    public void addEdge(BusStop from, BusStop to, double weight) {
+    public void addEdge(Stop from, Stop to, double weight) {
         Node fromNode = getNode(from);
         Node toNode = getNode(to);
         if (fromNode == null || toNode == null) return;
         fromNode.addEdge(new Edge(weight, toNode));
     }
 
-    private Node getClosest(double lat, double lon) {
+    private Node getClosestNode(double lat, double lon) {
         Node aux = null;
         double auxDist = Double.MAX_VALUE;
         for (Node node : nodes) {
@@ -68,10 +69,44 @@ public class Graph {
         return aux;
     }
 
+    private List<Node> getClosest(double lat, double lon) {
+        TreeSet<Node> toReturn = new TreeSet<>();
+        Node aux = null;
+        double auxDist = Double.MAX_VALUE;
+        double maxDist = 500;
+        for (Node node : nodes) {
+            double d = node.getStop().distanceTo(lat, lon);
+            if (d < maxDist) {
+                node.weight = d;
+                toReturn.add(node);
+            }
+            if (d < auxDist) {
+                aux = node;
+                auxDist = d;
+            }
+        }
+        if (toReturn.size() == 0) toReturn.add(aux);
+        return toReturn.stream().limit(10).collect(Collectors.toList()); // Return the 10 closest stops
+    }
+
     public List<BusInPath> findPath(double fromLat, double fromLon, double toLat, double toLon) {
-        Node from = getClosest(fromLat, fromLon);
-        Node to = getClosest(toLat, toLon);
-        return dijkstra(from, to);
+        List<BusInPath> toReturn = null;
+
+        List<Node> from = getClosest(fromLat, fromLon);
+        List<Node> to = getClosest(toLat, toLon);
+        double toReturnDist = Double.MAX_VALUE;
+        for (Node start : from) {
+            for (Node end : to) {
+                List<BusInPath> aux = dijkstra(start, end);
+                double dist = end.weight;
+                if (dist < toReturnDist) {
+                    toReturn = aux; // Me guardo el de menor distancia;
+                    toReturnDist = dist;
+                }
+            }
+        }
+
+        return toReturn;
     }
 
     private List<BusInPath> dijkstra(Node start, Node end) {
@@ -87,6 +122,7 @@ public class Graph {
 
         while (queue.size() != 0) {
             Node n = queue.remove();
+            if (n == end) break; // Already found best path to end node
             for (Edge edge : n.edges) {
                 Node to = edge.to;
                 double d = n.weight + edge.weight;
@@ -101,15 +137,15 @@ public class Graph {
         Node current = end;
         LinkedList<BusInPath> toReturn = new LinkedList<>();
         while (current != start) {
-            BusStop s1 = current.stop;
+            Stop s1 = current.stop;
             Node prev = current.from;
-            BusStop s2 = prev.stop;
+            Stop s2 = prev.stop;
             if (!s1.getLine().equals(s2.getLine())) {
                 current = prev;
                 continue;
             }
 
-            BusStop aux = s2;
+            Stop aux = s2;
             while (s1.getLine().equals(s2.getLine()) && prev != start) {
                 aux = s2;
                 prev = prev.from;
@@ -124,12 +160,12 @@ public class Graph {
     }
 
     private class Node implements Comparable<Node> {
-        BusStop stop;
+        Stop stop;
         List<Edge> edges = new ArrayList<>();
         double weight;
         Node from;
 
-        public Node(BusStop stop) {
+        public Node(Stop stop) {
             this.stop = stop;
         }
 
@@ -137,7 +173,7 @@ public class Graph {
             edges.add(edge);
         }
 
-        public BusStop getStop() {
+        public Stop getStop() {
             return stop;
         }
 

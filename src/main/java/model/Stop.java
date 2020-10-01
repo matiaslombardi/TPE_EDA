@@ -1,12 +1,12 @@
 package model;
 
-public class BusStop {
+public class Stop {
     static int EARTH_RADIUS = 6371;
     private final double lat;
     private final double lon;
     private final String line;
 
-    public BusStop(double lat, double lon, String line) {
+    public Stop(double lat, double lon, String line) {
         this.lat = lat;
         this.lon = lon;
         this.line = line;
@@ -34,7 +34,7 @@ public class BusStop {
         return EARTH_RADIUS * c * 1000;
     }
 
-    public double distanceTo(BusStop other) {
+    public double distanceTo(Stop other) {
         return distanceTo(other.getLat(), other.getLon());
     }
 
