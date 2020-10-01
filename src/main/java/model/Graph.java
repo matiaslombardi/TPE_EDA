@@ -1,10 +1,8 @@
 package model;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Graph {
-    static String WALK = "Caminar";
     List<Node> nodes = new ArrayList<>();
     Map<String, List<Node>> lines = new HashMap<>();
 
@@ -21,8 +19,8 @@ public class Graph {
 
             double dist = s.distanceTo(stop);
             if (dist <= 500) {
-                addEdge(s, stop, dist, WALK);
-                addEdge(stop, s, dist, WALK);
+                addEdge(s, stop, dist * 1000);
+                addEdge(stop, s, dist * 1000);
             }
         }
     }
@@ -43,54 +41,15 @@ public class Graph {
         return aux;
     }
 
-    private List<BusInPath> dijkstra(Node start, Node end) {
-        for (Node node : nodes) {
-            node.weight = Double.MAX_VALUE;
-            node.from = null;
-        }
-
-        start.weight = 0;
-
-        PriorityQueue<Node> queue = new PriorityQueue<>();
-        queue.add(start);
-
-        while (queue.size() != 0) {
-            Node n = queue.remove();
-            for (Edge edge : n.edges) {
-                double d = n.weight + edge.weight;
-                if (d < edge.to.weight) {
-                    edge.to.weight = d;
-                    edge.to.from = n;
-                    queue.add(edge.to);
-                }
-            }
-        }
-
-        Node aux = end;
-        List<BusInPath> toReturn = new ArrayList<>();
-        while (aux != start) {
-            Node aux2 = aux.from;
-            BusStop s1 = aux.stop;
-            BusStop s2 = aux2.stop;
-            String mode = s1.getLine();
-            if (!s1.getLine().equals(s2.getLine())) {
-                for (Edge edge : aux2.edges) {
-                    if (edge.to == aux)
-                        mode = edge.mode;
-                }
-            }
-            toReturn.add(new BusInPath(mode, s1.getLat(), s1.getLon(), s2.getLat(), s2.getLon()));
-            aux = aux.from;
-        }
-        return toReturn;
+    public boolean hasStop(BusStop stop) {
+        return getNode(stop) != null;
     }
 
-
-    public void addEdge(BusStop from, BusStop to, double weight, String mode) {
+    public void addEdge(BusStop from, BusStop to, double weight) {
         Node fromNode = getNode(from);
         Node toNode = getNode(to);
         if (fromNode == null || toNode == null) return;
-        fromNode.addEdge(new Edge(weight, toNode, mode));
+        fromNode.addEdge(new Edge(weight, toNode));
     }
 
     private Node getClosest(double lat, double lon) {
@@ -110,6 +69,46 @@ public class Graph {
         Node from = getClosest(fromLat, fromLon);
         Node to = getClosest(toLat, toLon);
         return dijkstra(from, to);
+    }
+
+    private List<BusInPath> dijkstra(Node start, Node end) {
+        for (Node node : nodes) {
+            node.weight = Double.MAX_VALUE;
+            node.from = null;
+        }
+
+        start.weight = 0;
+
+        PriorityQueue<Node> queue = new PriorityQueue<>();
+        queue.add(start);
+
+        while (queue.size() != 0) {
+            Node n = queue.remove();
+            for (Edge edge : n.edges) {
+                Node to = edge.to;
+                double d = n.weight + edge.weight;
+                if (d < to.weight) {
+                    to.weight = d;
+                    to.from = n;
+                    queue.add(to);
+                }
+            }
+        }
+
+        Node current = end;
+        List<BusInPath> toReturn = new ArrayList<>();
+        while (current != start) {
+            Node prev = current.from;
+            BusStop s1 = current.stop;
+            BusStop s2 = prev.stop;
+            System.out.println(s1.getLine());
+            System.out.println(s2.getLine());
+            if (s1.getLine().equals(s2.getLine()))
+                toReturn.add(new BusInPath(s1.getLine(), s2.getLat(), s2.getLon(), s1.getLat(), s1.getLon()));
+
+            current = prev;
+        }
+        return toReturn;
     }
 
     private class Node implements Comparable<Node> {
@@ -138,13 +137,11 @@ public class Graph {
 
     private class Edge {
         double weight;
-        String mode;
         Node to;
 
-        public Edge(double weight, Node to, String mode) {
+        public Edge(double weight, Node to) {
             this.weight = weight;
             this.to = to;
-            this.mode = mode;
         }
     }
 }

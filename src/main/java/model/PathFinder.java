@@ -37,7 +37,7 @@ public class PathFinder {
                 for (int i = 1; i < stops.size(); i++) {
                     BusStop s1 = stops.get(i-1);
                     BusStop s2 = stops.get(i);
-                    graph.addEdge(s1, s2, s1.distanceTo(s2)/100, line);
+                    graph.addEdge(s1, s2, s1.distanceTo(s2)/100);
                 }
 
             }
@@ -52,8 +52,11 @@ public class PathFinder {
         String[] arr = aux.split(", ");
         for (String str: arr) {
             String[] pair = str.split(" ");
-            toReturn.add(new BusStop(Double.parseDouble(pair[0]),
-                    Double.parseDouble(pair[1]), line));
+            BusStop stop = new BusStop(Double.parseDouble(pair[0]),
+                    Double.parseDouble(pair[1]), line);
+
+            if (graph.hasStop(stop))
+                toReturn.add(stop);
         }
         return toReturn;
     }

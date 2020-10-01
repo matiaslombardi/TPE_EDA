@@ -18,6 +18,7 @@ public class Controller {
   public Controller() throws IOException {
     placeFinder = new PlaceFinder();
     pathFinder = new PathFinder();
+    System.out.println("Finished importing data");
   }
 
   public List<BusInPath> findPath(double fromLat, double fromLng, double toLat, double toLng) {
