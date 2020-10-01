@@ -1,16 +1,17 @@
 package model;
 import com.opencsv.CSVReader;
-import utils.Levenshtein;
+import utils.QGrams;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 
 public class PlaceFinder {
     private final List<PlaceLocation> places = new ArrayList<>();
+    private final QGrams qGrams = new QGrams(3);
 
     public PlaceFinder() throws IOException {
         String fileName = "src/main/resources/espacios-culturales.csv";
@@ -28,19 +29,19 @@ public class PlaceFinder {
     }
 
     public List<PlaceLocation> findPlaces(String query){
-        Set<BetterMatch> aux = new TreeSet<>();
+        TreeSet<BetterMatch> toReturn = new TreeSet<>();
         for (PlaceLocation place : places) {
-            aux.add(new BetterMatch(place, Levenshtein.normalizedSimilarity(place.getName(), query)));
+            double sim = qGrams.similarity(place.getName(), query);
+            BetterMatch toAdd = new BetterMatch(place, sim);
+            if(toReturn.size() < 10) {
+                toReturn.add(toAdd);
+            }
+            else if(toReturn.last().getSimilarity() < sim){
+                toReturn.remove(toReturn.last());
+                toReturn.add(new BetterMatch(place, sim));
+            }
         }
-        List<PlaceLocation> toReturn = new ArrayList<>();
-        int amount = 0;
-        for (BetterMatch betterMatch : aux) {
-            toReturn.add(betterMatch.getPlace());
-            amount++;
-            if(amount == 9)
-                break;
-        }
-        return toReturn;
+        return toReturn.stream().map(BetterMatch::getPlace).collect(Collectors.toList());
     }
 
     private static class BetterMatch implements Comparable<BetterMatch>{
@@ -54,6 +55,10 @@ public class PlaceFinder {
 
         public PlaceLocation getPlace() {
             return place;
+        }
+
+        public double getSimilarity() {
+            return similarity;
         }
 
         @Override
