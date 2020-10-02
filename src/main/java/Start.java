@@ -22,7 +22,7 @@ public class Start {
     }, json());
     get("/place", (req, res) -> {
       String searchTerm = req.queryParams("searchTerm");
-      return controller.findPlaces(searchTerm);
+      return controller.findPlaces(searchTerm.toUpperCase());
     }, json());
   }
 

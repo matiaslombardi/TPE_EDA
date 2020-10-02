@@ -1,6 +1,7 @@
 package model;
 
 public class BusInPath {
+
   public final String name;
   public final double fromLat;
   public final double fromLng;
@@ -14,4 +15,5 @@ public class BusInPath {
     this.toLat = toLat;
     this.toLng = toLng;
   }
+
 }

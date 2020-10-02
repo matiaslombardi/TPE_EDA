@@ -5,10 +5,24 @@ import java.util.stream.Collectors;
 
 public class Graph {
     private static final int PENALTY = 10000;
-    List<Node> nodes = new ArrayList<>();
-    Map<String, List<Node>> lines = new HashMap<>();
+    //List<Node> nodes = new ArrayList<>();
+    Map<Stop, Node> stopsMap = new HashMap<>();
 
-    public void addNode(Stop stop) {
+    public Graph(List<Stop> stops) {
+        for (Stop stop : stops) {
+            Node node = new Node(stop);
+            stopsMap.put(stop, node);
+            for (Stop s : stopsMap.keySet()) {
+                if (s.getLine().equals(stop.getLine())) continue;
+
+                double dist = s.distanceTo(stop);
+                if (dist < 500)
+                    addEdge(stop, s, PENALTY+dist,false);
+            }
+        }
+    }
+
+    /*public void addNode(Stop stop) {
         Node node = new Node(stop);
         String line = stop.getLine();
         nodes.add(node);
@@ -25,10 +39,10 @@ public class Graph {
                 addEdge(stop, s, PENALTY+dist);
             }
         }
-    }
+    }*/
 
     private Node getNode(Stop stop) {
-        List<Node> stops = lines.get(stop.getLine());
+        /*List<Node> stops = lines.get(stop.getLine());
 
         if (stops == null)
             return null;
@@ -40,33 +54,34 @@ public class Graph {
             double cmp = Math.sqrt(a+b);
             if (cmp <= 0.00000001)
                 return node;
-        }
+        }*/
 
-        return null;
+
+        return stopsMap.get(stop);
     }
 
     public boolean hasStop(Stop stop) {
         return getNode(stop) != null;
     }
 
-    public void addEdge(Stop from, Stop to, double weight) {
+    public void generateEdges(List<Trip> trips, boolean isDirected) {
+        for (Trip trip : trips) {
+            List<Stop> stops = trip.getStops();
+            for (int i = 1; i < stops.size(); i++) {
+                Stop s1 = stops.get(i-1);
+                Stop s2 = stops.get(i);
+                addEdge(s1, s2, s1.distanceTo(s2), isDirected);
+            }
+        }
+    }
+
+    public void addEdge(Stop from, Stop to, double weight, boolean isDirected) {
         Node fromNode = getNode(from);
         Node toNode = getNode(to);
         if (fromNode == null || toNode == null) return;
         fromNode.addEdge(new Edge(weight, toNode));
-    }
-
-    private Node getClosestNode(double lat, double lon) {
-        Node aux = null;
-        double auxDist = Double.MAX_VALUE;
-        for (Node node : nodes) {
-            double d = node.getStop().distanceTo(lat, lon);
-            if (d < auxDist) {
-                aux = node;
-                auxDist = d;
-            }
-        }
-        return aux;
+        if (!isDirected)
+            toNode.addEdge(new Edge(weight, fromNode));
     }
 
     private List<Node> getClosest(double lat, double lon) {
@@ -74,10 +89,10 @@ public class Graph {
         Node aux = null;
         double auxDist = Double.MAX_VALUE;
         double maxDist = 500;
-        for (Node node : nodes) {
+        for (Node node : stopsMap.values()) {
             double d = node.getStop().distanceTo(lat, lon);
             if (d < maxDist) {
-                node.weight = d;
+                node.distance = d;
                 toReturn.add(node);
             }
             if (d < auxDist) {
@@ -98,7 +113,7 @@ public class Graph {
         for (Node start : from) {
             for (Node end : to) {
                 List<BusInPath> aux = dijkstra(start, end);
-                double dist = end.weight;
+                double dist = end.distance;
                 if (dist < toReturnDist) {
                     toReturn = aux; // Me guardo el de menor distancia;
                     toReturnDist = dist;
@@ -110,12 +125,13 @@ public class Graph {
     }
 
     private List<BusInPath> dijkstra(Node start, Node end) {
-        for (Node node : nodes) {
-            node.weight = Double.MAX_VALUE;
+        for (Node node : stopsMap.values()) {
+            node.distance = Double.MAX_VALUE;
             node.from = null;
+            node.visited = false;
         }
 
-        start.weight = 0;
+        start.distance = 0;
 
         PriorityQueue<Node> queue = new PriorityQueue<>();
         queue.add(start);
@@ -123,11 +139,14 @@ public class Graph {
         while (queue.size() != 0) {
             Node n = queue.remove();
             if (n == end) break; // Already found best path to end node
+            if (n.visited) continue;
+            n.visited = true;
+
             for (Edge edge : n.edges) {
                 Node to = edge.to;
-                double d = n.weight + edge.weight;
-                if (d < to.weight) {
-                    to.weight = d;
+                double d = n.distance + edge.weight;
+                if (d < to.distance) {
+                    to.distance = d;
                     to.from = n;
                     queue.add(to);
                 }
@@ -162,9 +181,9 @@ public class Graph {
     private class Node implements Comparable<Node> {
         Stop stop;
         List<Edge> edges = new ArrayList<>();
-        double weight;
+        double distance;
         Node from;
-
+        boolean visited;
         public Node(Stop stop) {
             this.stop = stop;
         }
@@ -179,7 +198,7 @@ public class Graph {
 
         @Override
         public int compareTo(Node o) {
-            return Double.compare(weight, o.weight);
+            return Double.compare(distance, o.distance);
         }
     }
 

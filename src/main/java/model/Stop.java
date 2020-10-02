@@ -1,15 +1,19 @@
 package model;
 
+import java.util.Objects;
+
 public class Stop {
     static int EARTH_RADIUS = 6371;
     private final double lat;
     private final double lon;
     private final String line;
+    private final int id;
 
-    public Stop(double lat, double lon, String line) {
+    public Stop(double lat, double lon, String line, int id) {
         this.lat = lat;
         this.lon = lon;
         this.line = line;
+        this.id = id;
     }
 
     public double getLat() {
@@ -38,4 +42,19 @@ public class Stop {
         return distanceTo(other.getLat(), other.getLon());
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Stop)) return false;
+        Stop stop = (Stop) o;
+        return Double.compare(stop.lat, lat) == 0 &&
+                Double.compare(stop.lon, lon) == 0 &&
+                id == stop.id &&
+                line.equals(stop.line);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(lat, lon, line, id);
+    }
 }

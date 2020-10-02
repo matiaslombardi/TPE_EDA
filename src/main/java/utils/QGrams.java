@@ -5,9 +5,11 @@ import java.util.Map;
 
 public class QGrams {
     private final int n;
-    public QGrams(int n){
+
+    public QGrams(int n) {
         this.n = n;
     }
+
     public Map<String,Integer> generateGrams(String string){
         String numerales = "";
         for(int i = 0 ; i < n - 1 ; i++){
@@ -23,11 +25,7 @@ public class QGrams {
         }
         return toReturn;
     }
-    public void printTokens(String word){
-        Map<String, Integer> tokens = generateGrams(word);
-        for (Map.Entry<String, Integer> entries :tokens.entrySet())
-            System.out.printf("%s %d%n",entries.getKey(),entries.getValue());
-    }
+
     public double similarity(String first, String second){
         Map<String,Integer> firstMap = generateGrams(first);
         Map<String,Integer> secondMap = generateGrams(second);

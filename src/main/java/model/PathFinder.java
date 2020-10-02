@@ -18,5 +18,6 @@ public class PathFinder {
     public List<BusInPath> findPath(double fromLat, double fromLng, double toLat, double toLng) {
         return graph.findPath(fromLat, fromLng, toLat, toLng);
     }
+
 }
 

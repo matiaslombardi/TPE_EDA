@@ -18,22 +18,21 @@ public class PlaceFinder {
     }
 
     public List<PlaceLocation> findPlaces(String query){
-        TreeSet<BetterMatch> toReturn = new TreeSet<>();
+        TreeSet<PlaceLocation> toReturn = new TreeSet<>();
         for (PlaceLocation place : places) {
             double sim = qGrams.similarity(place.getName(), query);
-            BetterMatch toAdd = new BetterMatch(place, sim);
+            place.setSim(sim);
             if(toReturn.size() < 10) {
-                toReturn.add(toAdd);
-            }
-            else if(toReturn.last().getSimilarity() < sim){
+                toReturn.add(place);
+            } else if(toReturn.last().getSim() < sim) {
                 toReturn.remove(toReturn.last());
-                toReturn.add(new BetterMatch(place, sim));
+                toReturn.add(place);
             }
         }
-        return toReturn.stream().map(BetterMatch::getPlace).collect(Collectors.toList());
+        return new ArrayList<>(toReturn);
     }
 
-    private static class BetterMatch implements Comparable<BetterMatch>{
+    /*private static class BetterMatch implements Comparable<BetterMatch>{
         private final PlaceLocation place;
         private final double similarity;
 
@@ -58,5 +57,5 @@ public class PlaceFinder {
             }
             return cmp;
         }
-    }
+    }*/
 }
