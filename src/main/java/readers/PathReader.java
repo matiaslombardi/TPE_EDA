@@ -1,6 +1,7 @@
 package readers;
 
 import com.opencsv.CSVReader;
+import model.Point;
 import model.Trip;
 import model.Stop;
 import model.Graph;
@@ -14,6 +15,8 @@ import java.util.Map;
 
 public class PathReader {
 
+    private static final double ROUNDER = Math.pow(10, 6);
+
     public List<Stop> readPaths() {
         //Graph graph = new Graph();
         System.out.println("Reading stops");
@@ -23,8 +26,8 @@ public class PathReader {
             String[] nextLine;
             reader.readNext();
             while ((nextLine = reader.readNext()) != null) {
-                Stop toAdd = new Stop(Double.parseDouble(nextLine[3]),
-                        Double.parseDouble(nextLine[4]), nextLine[8], Integer.parseInt(nextLine[5]));
+                Stop toAdd = new Stop(new Point(Double.parseDouble(nextLine[3]), Double.parseDouble(nextLine[4])),
+                        nextLine[8], Integer.parseInt(nextLine[5]));
                 stops.add(toAdd);
             }
         } catch (IOException e) {
@@ -45,7 +48,7 @@ public class PathReader {
             reader.readNext();
             while ((nextLine = reader.readNext()) != null) {
                 String line = nextLine[4];
-                Stop stop = new Stop(Double.parseDouble(nextLine[1]), Double.parseDouble(nextLine[0]), line, 0);
+                Stop stop = new Stop(new Point(doubleFromString(nextLine[1]), doubleFromString(nextLine[0])), line, 0);
                 //stops.add(stop);
                 map.putIfAbsent(line, new ArrayList<>());
                 map.get(line).add(stop);
@@ -55,6 +58,12 @@ public class PathReader {
             e.printStackTrace();
         }
         return map;
+    }
+
+    private double doubleFromString(String str) {
+        double aux = Double.parseDouble(str);
+        //return Math.round(aux*ROUNDER)/ROUNDER;
+        return aux;
     }
 
     public List<Trip> readSubwayRoutes(Map<String, List<Stop>> map) {
@@ -91,10 +100,10 @@ public class PathReader {
 
         for (String str: arr) {
             String[] pair = str.split(" ");
-            Stop stop = new Stop(Double.parseDouble(pair[1]),
-                    Double.parseDouble(pair[0]), line, id);
+            Stop stop = new Stop(new Point(doubleFromString(pair[1]),
+                    doubleFromString(pair[0])), line, id);
 
-            if (graph.hasStop(stop))
+           if (graph.hasStop(stop))
                 toReturn.add(stop);
         }
 

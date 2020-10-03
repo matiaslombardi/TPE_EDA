@@ -1,13 +1,9 @@
 package model;
-import com.opencsv.CSVReader;
 import utils.QGrams;
 
-import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
-
 
 public class PlaceFinder {
     private final List<PlaceLocation> places;
