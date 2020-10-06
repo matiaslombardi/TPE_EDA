@@ -8,6 +8,10 @@ public class BusInPath {
   public double toLat;
   public double toLng;
 
+  public BusInPath(BusInPath busInPath) {
+    this(busInPath.name, busInPath.fromLat, busInPath.fromLng, busInPath.toLat, busInPath.toLng);
+  }
+
   public BusInPath(String name, double fromLat, double fromLng, double toLat, double toLng) {
     this.name = name;
     this.fromLat = fromLat;

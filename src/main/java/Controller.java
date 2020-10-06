@@ -15,7 +15,6 @@ public class Controller {
   private final PlaceFinder placeFinder;
   private final PathFinder pathFinder;
 
-
   public Controller() {
     PlacesReader placesReader = new PlacesReader();
     List<PlaceLocation> places = placesReader.readPlaces();
@@ -25,15 +24,15 @@ public class Controller {
     PathReader pathReader = new PathReader();
     List<Stop> stops = pathReader.readPaths();
     Map<String, List<Stop>> map = pathReader.readSubways();
-    //for (List<Stop> value : map.values())
-    //  stops.addAll(value);
+    for (List<Stop> value : map.values())
+      stops.addAll(value);
 
     Graph graph = new Graph(stops);
     List<Trip> trips = pathReader.readRoutes(graph);
     graph.generateEdges(trips, true);
 
-    //trips = pathReader.readSubwayRoutes(map);
-    //graph.generateEdges(trips, false);
+    trips = pathReader.readSubwayRoutes(map);
+    graph.generateAllEdges(trips);
 
     pathFinder = new PathFinder(graph);
 

@@ -9,10 +9,11 @@ public class Graph {
     private static final double RIGHT = -57.5;   //-58.339342;
     private static final double BOTTOM = -35.25;     //  -34.788718;
     private static final int PENALTY = 5;
-    private static final double WALKABLE_DISTANCE = 0.005;
+    private static final double WALKABLE_DISTANCE = 0.004;
     private static final int ROWS = (int) (Math.abs(TOP - BOTTOM) / WALKABLE_DISTANCE);
     private static final int COLS = (int) (Math.abs(LEFT - RIGHT) / WALKABLE_DISTANCE);
-    private static final double THRESHOLD = 0.0001;
+    private static final double THRESHOLD = 0.0005;
+    private static final String FINISHED_PATH = "LLegamos";
 
     private final List<Node>[][] blocks;
     //List<Node> nodes = new ArrayList<>();
@@ -32,8 +33,6 @@ public class Graph {
 
     @SuppressWarnings("unchecked")
     public Graph(List<Stop> stops) {
-        System.out.println(ROWS);
-        System.out.println(COLS);
         blocks = (List<Node>[][]) new List[ROWS + 1][COLS + 1];
         for (Stop stop : stops) {
             Node node = new Node(stop);
@@ -45,7 +44,9 @@ public class Graph {
             stopsMap.put(stop, node);
             lines.putIfAbsent(stop.getLine(), new ArrayList<>());
             lines.get(stop.getLine()).add(node);
-            for (Stop s : stopsMap.keySet()) {
+            List<Node> closest = getClosest(stop.getLat(), stop.getLon());
+            for (Node n : closest) {
+                Stop s = n.getStop();
                 //if (s.getLine().equals(stop.getLine())) continue;
                 double dist = s.distanceTo(stop);
                 if (dist < WALKABLE_DISTANCE)
@@ -82,8 +83,19 @@ public class Graph {
         Node aux = stopsMap.get(stop);
         if (aux != null) return aux;
 
-        int row = getRow(stop.getPoint());
+        List<Node> nodes = getClosest(stop.getLat(), stop.getLon());
+        for (Node node : nodes) {
+            if (node.getStop().getLine().equals(stop.getLine())) {
+                if (aux == null || node.distance < aux.distance) {
+                    aux = node;
+                }
+            }
+        }
+        if (aux != null && aux.distance < THRESHOLD)
+            return aux;
+        /*int row = getRow(stop.getPoint());
         int col = getCol(stop.getPoint());
+
         if(blocks[row][col] == null)
             return null;
         for (Node node : blocks[row][col]) {
@@ -91,7 +103,7 @@ public class Graph {
                     node.stop.getPoint().distanceTo(stop.getPoint()) < THRESHOLD) {
                 return node;
             }
-        }
+        }*/
         return null;
         /*
         final Collection<Node> stops = lines.get(stop.getLine());
@@ -123,6 +135,19 @@ public class Graph {
                 Stop s1 = stops.get(i-1);
                 Stop s2 = stops.get(i);
                 addEdge(s1, s2, s1.distanceTo(s2), isDirected);
+            }
+        }
+    }
+
+    public void generateAllEdges(List<Trip> trips) {
+        for (Trip trip : trips) {
+            List<Stop> stops = trip.getStops();
+            for (int i = 0; i < stops.size(); i++) {
+                Stop s1 = stops.get(i);
+                for (int j = i+1; j < stops.size(); j++) {
+                    Stop s2 = stops.get(j);
+                    addEdge(s1, s2, s1.distanceTo(s2), false);
+                }
             }
         }
     }
@@ -172,6 +197,7 @@ public class Graph {
         if(col <= COLS)
             if(blocks[row][col + 1] != null)
                 toReturn.addAll(blocks[row][col + 1]);
+
         for (Node node : toReturn) {
             node.distance = point.distanceTo(node.stop.getPoint());
         }
@@ -205,15 +231,15 @@ public class Graph {
         return dijkstra(from, new Point(toLat, toLon), initDist);
     }
 
-    private LinkedList<BusInPath> dijkstra(List<Node> start, Point end, Map<Node, Double> intiDist) {
+    private LinkedList<BusInPath> dijkstra(List<Node> start, Point end, Map<Node, Double> initDist) {
         for (Node node : stopsMap.values()) {
             node.distance = Double.MAX_VALUE;
             node.from = new LinkedList<>();
             node.visited = false;
         }
-        for (Node node : start) {
-            node.distance = intiDist.get(node);
-        }
+
+        for (Node node : start)
+            node.distance = initDist.get(node);
 
         PriorityQueue<Node> queue = new PriorityQueue<>(start);
 
@@ -221,17 +247,17 @@ public class Graph {
             Node n = queue.remove();
             if (n.visited) continue;
             n.visited = true;
-            System.out.println(n.stop);
-            if(n.getStop().getLine().equals("Llegamos")) {
-                System.out.println("ENTREEEE");
+
+            if(n.getStop().getLine().equals(FINISHED_PATH)) {
+                System.out.println("Entre");
                 System.out.println(n.from);
                 return n.from;
             }
 
             if (end.distanceTo(n.getStop().getPoint()) < WALKABLE_DISTANCE) {
-                Node closePath = new Node(new Stop(end, "Llegamos", 0));
-                closePath.distance = n.distance + end.distanceTo(n.stop.getPoint());
-                closePath.from = n.from;
+                Node closePath = new Node(new Stop(end, FINISHED_PATH, 0));
+                closePath.distance = n.distance + PENALTY * end.distanceTo(n.stop.getPoint());
+                closePath.from = new LinkedList<>(n.from);
                 queue.add(closePath);
             }
 
@@ -239,16 +265,18 @@ public class Graph {
                 Node to = edge.to;
                 double newCost = n.distance + edge.weight;
                 if(!to.stop.getLine().equals(n.stop.getLine()))
-                    newCost += PENALTY + PENALTY*edge.weight;
+                    newCost += PENALTY + PENALTY * edge.weight;
+
                 if (newCost < to.distance) {
                     to.distance = newCost;
                     to.from = new LinkedList<>(n.from);
                     if(!to.from.isEmpty() && to.from.getLast().name.equals(to.stop.getLine())){
-                        BusInPath path = to.from.getLast();
+                        BusInPath path = new BusInPath(to.from.getLast());
                         path.toLat = to.stop.getLat();
                         path.toLng = to.stop.getLon();
-                    }
-                    else if (n.stop.getLine().equals(to.stop.getLine())){
+                        to.from.removeLast();
+                        to.from.addLast(path);
+                    } else if (n.stop.getLine().equals(to.stop.getLine())){
                         to.from.addLast(new BusInPath(n.stop.getLine(),
                                 n.stop.getLat(), n.stop.getLon(),
                                 to.stop.getLat(), to.stop.getLon()));

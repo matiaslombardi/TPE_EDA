@@ -25,13 +25,6 @@ public class Point {
         double dLat = other.lat-lat;
         double dLon = other.lng-lng;
         return Math.sqrt(Math.pow(dLat, 2) + Math.pow(dLon,2));
-        /*
-        double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(Math.toRadians(lat)) * Math.cos(Math.toRadians(other.lng)) *
-                        Math.sin(dLon/2) * Math.sin(dLon/2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return EARTH_RADIUS * c * 1000;
-         */
     }
 
     @Override
