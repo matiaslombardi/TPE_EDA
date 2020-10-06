@@ -3,10 +3,10 @@ package model;
 public class BusInPath {
 
   public final String name;
-  public final double fromLat;
-  public final double fromLng;
-  public final double toLat;
-  public final double toLng;
+  public double fromLat;
+  public double fromLng;
+  public double toLat;
+  public double toLng;
 
   public BusInPath(String name, double fromLat, double fromLng, double toLat, double toLng) {
     this.name = name;

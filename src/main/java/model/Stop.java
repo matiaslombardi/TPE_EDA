@@ -54,4 +54,13 @@ public class Stop {
     public int hashCode() {
         return Objects.hash(point, line, id);
     }
+
+    @Override
+    public String toString() {
+        return "Stop{" +
+                "point=" + point +
+                ", line='" + line + '\'' +
+                ", id=" + id +
+                '}';
+    }
 }

@@ -62,8 +62,8 @@ public class PathReader {
 
     private double doubleFromString(String str) {
         double aux = Double.parseDouble(str);
-        //return Math.round(aux*ROUNDER)/ROUNDER;
-        return aux;
+        return Math.round(aux*ROUNDER)/ROUNDER;
+        //return aux;
     }
 
     public List<Trip> readSubwayRoutes(Map<String, List<Stop>> map) {
