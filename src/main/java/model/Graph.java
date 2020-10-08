@@ -2,24 +2,21 @@ package model;
 
 import java.util.*;
 
-
 public class Graph {
     private static final double LEFT = -58.962238;
     private static final double TOP = -34.521517;
     private static final double RIGHT = -57.5;   //-58.339342;
     private static final double BOTTOM = -35.25;     //  -34.788718;
     private static final int PENALTY = 5;
-    private static final double WALKABLE_DISTANCE = 0.004;
+    private static final double WALKABLE_DISTANCE = 0.0055;
     private static final int ROWS = (int) (Math.abs(TOP - BOTTOM) / WALKABLE_DISTANCE);
     private static final int COLS = (int) (Math.abs(LEFT - RIGHT) / WALKABLE_DISTANCE);
     private static final double THRESHOLD = 0.0005;
-    private static final String FINISHED_PATH = "LLegamos";
+    private static final String FINISHED_PATH = "Llegamos";
 
-    private final List<Node>[][] blocks;
-    //List<Node> nodes = new ArrayList<>();
+    private final Grid[][] blocks;
     Map<Stop, Node> stopsMap = new HashMap<>();
     Map<String, List<Node>> lines = new HashMap<>();
-
 
     private int getRow(Point point){
         double lngDist = (point.getLat() - TOP) / WALKABLE_DISTANCE;
@@ -31,58 +28,42 @@ public class Graph {
         return (int) Math.abs(latDist);
     }
 
-    @SuppressWarnings("unchecked")
+    private boolean inRange(Point point){
+        double lat = point.getLat();
+        double lon = point.getLng();
+        return !(lat > TOP) && !(lat < BOTTOM) && !(lon < LEFT) && !(lon > RIGHT);
+    }
+
     public Graph(List<Stop> stops) {
-        blocks = (List<Node>[][]) new List[ROWS + 1][COLS + 1];
+        blocks = new Grid[ROWS + 1][COLS + 1];
         for (Stop stop : stops) {
-            Node node = new Node(stop);
-            int row = getRow(stop.getPoint());
-            int col = getCol(stop.getPoint());
-            if(blocks[row][col] == null)
-                blocks[row][col] = new ArrayList<>();
-            blocks[row][col].add(node);
-            stopsMap.put(stop, node);
-            lines.putIfAbsent(stop.getLine(), new ArrayList<>());
-            lines.get(stop.getLine()).add(node);
-            List<Node> closest = getClosest(stop.getLat(), stop.getLon());
-            for (Node n : closest) {
-                Stop s = n.getStop();
-                //if (s.getLine().equals(stop.getLine())) continue;
-                double dist = s.distanceTo(stop);
-                if (dist < WALKABLE_DISTANCE)
-                    addEdge(stop, s, dist,false);
+            if(inRange(stop.getPoint())) {
+                Node node = new Node(stop);
+                int row = getRow(stop.getPoint());
+                int col = getCol(stop.getPoint());
+                if (blocks[row][col] == null)
+                    blocks[row][col] = new Grid();
+                blocks[row][col].add(node);
+                stopsMap.put(stop, node);
+                lines.putIfAbsent(stop.getLine(), new ArrayList<>());
+                lines.get(stop.getLine()).add(node);
+                List<Node> closest = getClosest(stop.getLat(), stop.getLon());
+                for (Node n : closest) {
+                    Stop s = n.getStop();
+                    double dist = s.distanceTo(stop);
+                    if (dist < WALKABLE_DISTANCE)
+                        addEdge(stop, s, dist, false);
+                }
             }
         }
     }
 
-
-    /*public void addNode(Stop stop) {
-        Node node = new Node(stop);
-        String line = stop.getLine();
-        nodes.add(node);
-        lines.putIfAbsent(line, new ArrayList<>());
-        lines.get(line).add(node);
-        for (Node n : nodes) {
-            Stop s = n.getStop();
-            if (s.getLine().equals(stop.getLine()))
-                continue;
-
-            double dist = s.distanceTo(stop);
-            if (dist <= 500) {
-                addEdge(s, stop, PENALTY+dist);
-                addEdge(stop, s, PENALTY+dist);
-            }
-        }
-    }*/
-
     private Node getNode(Stop stop) {
         Point point = stop.getPoint();
-        if(point.getLat() < BOTTOM || point.getLat() > TOP
-                || point.getLng() < LEFT || point.getLng() > RIGHT)
+        if(!inRange(point))
             return null;
         Node aux = stopsMap.get(stop);
         if (aux != null) return aux;
-
         List<Node> nodes = getClosest(stop.getLat(), stop.getLon());
         for (Node node : nodes) {
             if (node.getStop().getLine().equals(stop.getLine())) {
@@ -93,35 +74,7 @@ public class Graph {
         }
         if (aux != null && aux.distance < THRESHOLD)
             return aux;
-        /*int row = getRow(stop.getPoint());
-        int col = getCol(stop.getPoint());
-
-        if(blocks[row][col] == null)
-            return null;
-        for (Node node : blocks[row][col]) {
-            if(node.stop.getLine().equals(stop.getLine()) &&
-                    node.stop.getPoint().distanceTo(stop.getPoint()) < THRESHOLD) {
-                return node;
-            }
-        }*/
         return null;
-        /*
-        final Collection<Node> stops = lines.get(stop.getLine());
-
-        if (stops == null)
-            return null;
-
-        for (Node node: stops) {
-            //if (!node.getStop().getLine().equals(stop.getLine())) continue;
-            double a = Math.pow(stop.getLat() - node.stop.getLat(), 2);
-            double b = Math.pow(stop.getLon() - node.stop.getLon(), 2);
-            double cmp = Math.sqrt(a+b);
-            if (cmp <= THRESHOLD)
-                return node;
-        }
-
-        return null;
-         */
     }
 
     public boolean hasStop(Stop stop) {
@@ -144,7 +97,7 @@ public class Graph {
             List<Stop> stops = trip.getStops();
             for (int i = 0; i < stops.size(); i++) {
                 Stop s1 = stops.get(i);
-                for (int j = i+1; j < stops.size(); j++) {
+                for (int j = i+1; j < stops.size(); j++) { // TODO
                     Stop s2 = stops.get(j);
                     addEdge(s1, s2, s1.distanceTo(s2), false);
                 }
@@ -165,68 +118,50 @@ public class Graph {
         Point point = new Point(lat,lon);
         int row = getRow(point);
         int col = getCol(point);
-        List<Node> aux = blocks[row][col];
+        Grid aux = blocks[row][col];
         List<Node> toReturn = new ArrayList<>();
         if(aux != null)
-            toReturn.addAll(aux);
+            toReturn.addAll(aux.getNodes());
         if(row >= 1){
             if(blocks[row - 1][col] != null)
-                toReturn.addAll(blocks[row - 1][col]);
+                toReturn.addAll(blocks[row - 1][col].getNodes());
             if(col >= 1)
                 if(blocks[row - 1][col - 1] != null)
-                    toReturn.addAll(blocks[row - 1][col - 1]);
+                    toReturn.addAll(blocks[row - 1][col - 1].getNodes());
         }
         if(col >= 1)
             if(blocks[row][col - 1] != null)
-                toReturn.addAll(blocks[row][col - 1]);
+                toReturn.addAll(blocks[row][col - 1].getNodes());
         if(row <= ROWS){
             if(blocks[row + 1][col] != null)
-                toReturn.addAll(blocks[row + 1][col]);
+                toReturn.addAll(blocks[row + 1][col].getNodes());
             if(col <= COLS)
                 if(blocks[row + 1][col + 1] != null)
-                    toReturn.addAll(blocks[row + 1][col + 1]);
+                    toReturn.addAll(blocks[row + 1][col + 1].getNodes());
         }
         if(row >= 1 && col <= COLS){
             if(blocks[row - 1][col + 1] != null)
-                toReturn.addAll(blocks[row - 1][col + 1]);
+                toReturn.addAll(blocks[row - 1][col + 1].getNodes());
         }
         if(row <= ROWS && col >= 1){
             if(blocks[row + 1][col - 1] != null)
-                toReturn.addAll(blocks[row + 1][col - 1]);
+                toReturn.addAll(blocks[row + 1][col - 1].getNodes());
         }
         if(col <= COLS)
             if(blocks[row][col + 1] != null)
-                toReturn.addAll(blocks[row][col + 1]);
+                toReturn.addAll(blocks[row][col + 1].getNodes());
 
         for (Node node : toReturn) {
             node.distance = point.distanceTo(node.stop.getPoint());
         }
         return toReturn;
-        /*
-        TreeSet<Node> toReturn = new TreeSet<>();
-        Node aux = null;
-        double auxDist = Double.MAX_VALUE;
-        for (Node node : stopsMap.values()) {
-            double d = node.getStop().distanceTo(new Point(lat, lon));
-            node.distance = d;
-            if (d < WALKABLE_DISTANCE) {
-                toReturn.add(node);
-            }
-            if (d < auxDist) {
-                aux = node;
-                auxDist = d;
-            }
-        }
-        if (toReturn.size() == 0) toReturn.add(aux);
-        return toReturn.stream().limit(20).collect(Collectors.toList()); // Return the 20 closest stops
-         */
     }
 
     public List<BusInPath> findPath(double fromLat, double fromLon, double toLat, double toLon) {
         List<Node> from = getClosest(fromLat, fromLon);
         Map<Node, Double> initDist = new HashMap<>();
         for (Node node : from) {
-            initDist.put(node, node.distance);
+            initDist.put(node, node.distance + PENALTY * node.distance);
         }
         return dijkstra(from, new Point(toLat, toLon), initDist);
     }
@@ -237,10 +172,8 @@ public class Graph {
             node.from = new LinkedList<>();
             node.visited = false;
         }
-
         for (Node node : start)
             node.distance = initDist.get(node);
-
         PriorityQueue<Node> queue = new PriorityQueue<>(start);
 
         while (!queue.isEmpty()) {
@@ -286,39 +219,5 @@ public class Graph {
             }
         }
         return new LinkedList<>();
-    }
-
-    private class Node implements Comparable<Node> {
-        Stop stop;
-        List<Edge> edges = new ArrayList<>();
-        double distance;
-        LinkedList<BusInPath> from;
-        boolean visited;
-        public Node(Stop stop) {
-            this.stop = stop;
-        }
-
-        public void addEdge(Edge edge) {
-            edges.add(edge);
-        }
-
-        public Stop getStop() {
-            return stop;
-        }
-
-        @Override
-        public int compareTo(Node o) {
-            return Double.compare(distance, o.distance);
-        }
-    }
-
-    private class Edge {
-        double weight;
-        Node to;
-
-        public Edge(double weight, Node to) {
-            this.weight = weight;
-            this.to = to;
-        }
     }
 }
