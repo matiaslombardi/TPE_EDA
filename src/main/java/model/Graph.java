@@ -5,34 +5,18 @@ import java.util.*;
 public class Graph {
     private static final double LEFT = -58.962238;
     private static final double TOP = -34.521517;
-    private static final double RIGHT = -57.5;   //-58.339342;
-    private static final double BOTTOM = -35.25;     //  -34.788718;
-    private static final int PENALTY = 5;
+    private static final double RIGHT = -57.5;
+    private static final double BOTTOM = -35.25;
+    private static final int PENALTY = 10;
     private static final double WALKABLE_DISTANCE = 0.0055;
     private static final int ROWS = (int) (Math.abs(TOP - BOTTOM) / WALKABLE_DISTANCE);
     private static final int COLS = (int) (Math.abs(LEFT - RIGHT) / WALKABLE_DISTANCE);
     private static final double THRESHOLD = 0.0005;
-    private static final String FINISHED_PATH = "Llegamos";
+    private static final String FINISHED_PATH = "FINISHED";
 
     private final Grid[][] blocks;
-    Map<Stop, Node> stopsMap = new HashMap<>();
-    Map<String, List<Node>> lines = new HashMap<>();
-
-    private int getRow(Point point){
-        double lngDist = (point.getLat() - TOP) / WALKABLE_DISTANCE;
-        return (int) Math.abs(lngDist);
-    }
-
-    private int getCol(Point point){
-        double latDist = (point.getLng() - LEFT) / WALKABLE_DISTANCE;
-        return (int) Math.abs(latDist);
-    }
-
-    private boolean inRange(Point point){
-        double lat = point.getLat();
-        double lon = point.getLng();
-        return !(lat > TOP) && !(lat < BOTTOM) && !(lon < LEFT) && !(lon > RIGHT);
-    }
+    private final Map<Stop, Node> stopsMap = new HashMap<>();
+    //private final Map<String, List<Node>> lines = new HashMap<>();
 
     public Graph(List<Stop> stops) {
         blocks = new Grid[ROWS + 1][COLS + 1];
@@ -45,9 +29,9 @@ public class Graph {
                     blocks[row][col] = new Grid();
                 blocks[row][col].add(node);
                 stopsMap.put(stop, node);
-                lines.putIfAbsent(stop.getLine(), new ArrayList<>());
-                lines.get(stop.getLine()).add(node);
-                List<Node> closest = getClosest(stop.getLat(), stop.getLon());
+                /*lines.putIfAbsent(stop.getLine(), new ArrayList<>());
+                lines.get(stop.getLine()).add(node);*/
+                List<Node> closest = getClosest(stop.getPoint());
                 for (Node n : closest) {
                     Stop s = n.getStop();
                     double dist = s.distanceTo(stop);
@@ -64,9 +48,9 @@ public class Graph {
             return null;
         Node aux = stopsMap.get(stop);
         if (aux != null) return aux;
-        List<Node> nodes = getClosest(stop.getLat(), stop.getLon());
+        List<Node> nodes = getClosest(stop.getPoint());
         for (Node node : nodes) {
-            if (node.getStop().getLine().equals(stop.getLine())) {
+            if (node.getStop().sameLine(stop)) {
                 if (aux == null || node.distance < aux.distance) {
                     aux = node;
                 }
@@ -79,6 +63,15 @@ public class Graph {
 
     public boolean hasStop(Stop stop) {
         return getNode(stop) != null;
+    }
+
+    private void addEdge(Stop from, Stop to, double weight, boolean isDirected) {
+        Node fromNode = getNode(from);
+        Node toNode = getNode(to);
+        if (fromNode == null || toNode == null) return;
+        fromNode.addEdge(new Edge(weight, toNode));
+        if (!isDirected)
+            toNode.addEdge(new Edge(weight, fromNode));
     }
 
     public void generateEdges(List<Trip> trips, boolean isDirected) {
@@ -95,9 +88,9 @@ public class Graph {
     public void generateAllEdges(List<Trip> trips) {
         for (Trip trip : trips) {
             List<Stop> stops = trip.getStops();
-            for (int i = 0; i < stops.size(); i++) {
+            for (int i = 0; i < stops.size() - 1; i++) {
                 Stop s1 = stops.get(i);
-                for (int j = i+1; j < stops.size(); j++) { // TODO
+                for (int j = i+1; j < stops.size(); j++) {
                     Stop s2 = stops.get(j);
                     addEdge(s1, s2, s1.distanceTo(s2), false);
                 }
@@ -105,17 +98,7 @@ public class Graph {
         }
     }
 
-    public void addEdge(Stop from, Stop to, double weight, boolean isDirected) {
-        Node fromNode = getNode(from);
-        Node toNode = getNode(to);
-        if (fromNode == null || toNode == null) return;
-        fromNode.addEdge(new Edge(weight, toNode));
-        if (!isDirected)
-            toNode.addEdge(new Edge(weight, fromNode));
-    }
-
-    private List<Node> getClosest(double lat, double lon) {
-        Point point = new Point(lat,lon);
+    private List<Node> getClosest(Point point) {
         int row = getRow(point);
         int col = getCol(point);
         Grid aux = blocks[row][col];
@@ -158,12 +141,20 @@ public class Graph {
     }
 
     public List<BusInPath> findPath(double fromLat, double fromLon, double toLat, double toLon) {
-        List<Node> from = getClosest(fromLat, fromLon);
+        Point start = new Point(fromLat, fromLon);
+        Point end = new Point(toLat, toLon);
+        if (!inRange(start) || !inRange(end))
+            return new ArrayList<>();
+
+        if (start.distanceTo(end) < WALKABLE_DISTANCE)
+            return new ArrayList<>();
+
+        List<Node> from = getClosest(start);
         Map<Node, Double> initDist = new HashMap<>();
-        for (Node node : from) {
+        for (Node node : from)
             initDist.put(node, node.distance + PENALTY * node.distance);
-        }
-        return dijkstra(from, new Point(toLat, toLon), initDist);
+
+        return dijkstra(from, end, initDist);
     }
 
     private LinkedList<BusInPath> dijkstra(List<Node> start, Point end, Map<Node, Double> initDist) {
@@ -172,8 +163,10 @@ public class Graph {
             node.from = new LinkedList<>();
             node.visited = false;
         }
+
         for (Node node : start)
             node.distance = initDist.get(node);
+
         PriorityQueue<Node> queue = new PriorityQueue<>(start);
 
         while (!queue.isEmpty()) {
@@ -188,7 +181,7 @@ public class Graph {
             }
 
             if (end.distanceTo(n.getStop().getPoint()) < WALKABLE_DISTANCE) {
-                Node closePath = new Node(new Stop(end, FINISHED_PATH, 0));
+                Node closePath = new Node(new Stop(end, FINISHED_PATH));
                 closePath.distance = n.distance + PENALTY * end.distanceTo(n.stop.getPoint());
                 closePath.from = new LinkedList<>(n.from);
                 queue.add(closePath);
@@ -197,22 +190,23 @@ public class Graph {
             for (Edge edge : n.edges) {
                 Node to = edge.to;
                 double newCost = n.distance + edge.weight;
-                if(!to.stop.getLine().equals(n.stop.getLine()))
+                if(!to.stop.sameLine(n.stop))
                     newCost += PENALTY + PENALTY * edge.weight;
 
                 if (newCost < to.distance) {
                     to.distance = newCost;
                     to.from = new LinkedList<>(n.from);
-                    if(!to.from.isEmpty() && to.from.getLast().name.equals(to.stop.getLine())){
+                    if(!to.from.isEmpty() && to.from.getLast().samePath(to.stop)){
                         BusInPath path = new BusInPath(to.from.getLast());
                         path.toLat = to.stop.getLat();
                         path.toLng = to.stop.getLon();
                         to.from.removeLast();
                         to.from.addLast(path);
-                    } else if (n.stop.getLine().equals(to.stop.getLine())){
+                    } else if (n.stop.sameLine(to.stop)){
                         to.from.addLast(new BusInPath(n.stop.getLine(),
                                 n.stop.getLat(), n.stop.getLon(),
-                                to.stop.getLat(), to.stop.getLon()));
+                                to.stop.getLat(), to.stop.getLon(),
+                                to.stop.getId()));
                     }
                     queue.add(to);
                 }
@@ -220,4 +214,21 @@ public class Graph {
         }
         return new LinkedList<>();
     }
+
+    private int getRow(Point point){
+        double lngDist = (point.getLat() - TOP) / WALKABLE_DISTANCE;
+        return (int) Math.abs(lngDist);
+    }
+
+    private int getCol(Point point){
+        double latDist = (point.getLng() - LEFT) / WALKABLE_DISTANCE;
+        return (int) Math.abs(latDist);
+    }
+
+    private boolean inRange(Point point){
+        double lat = point.getLat();
+        double lon = point.getLng();
+        return !(lat > TOP) && !(lat < BOTTOM) && !(lon < LEFT) && !(lon > RIGHT);
+    }
+
 }

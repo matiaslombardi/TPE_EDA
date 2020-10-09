@@ -6,7 +6,7 @@ import java.util.List;
 
 public class Node implements Comparable<Node> {
     Stop stop;
-    List<Edge> edges = new ArrayList<>();
+    public List<Edge> edges = new ArrayList<>();
     double distance;
     LinkedList<BusInPath> from;
     boolean visited;

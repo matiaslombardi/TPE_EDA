@@ -15,17 +15,17 @@ public class PlaceFinder {
 
     public List<PlaceLocation> findPlaces(String query){
         TreeSet<PlaceLocation> toReturn = new TreeSet<>();
-        for (PlaceLocation place : places) {
-            double sim = qGrams.similarity(place.getName(), query);
+        for (PlaceLocation place : places) { // p lugares
+            double sim = qGrams.similarity(place.getName(), query); // n * m
             place.setSim(sim);
             if(toReturn.size() < 10) {
-                toReturn.add(place);
+                toReturn.add(place); // log a, a < 10 = cte
             } else if(toReturn.last().getSim() < sim) {
-                toReturn.remove(toReturn.last());
-                toReturn.add(place);
+                toReturn.remove(toReturn.last()); // log 10 = cte
+                toReturn.add(place); // log 9
             }
-        }
-        return new ArrayList<>(toReturn);
+        } // p * n * m
+        return new ArrayList<>(toReturn); // Orden 10
     }
 
     /*private static class BetterMatch implements Comparable<BetterMatch>{

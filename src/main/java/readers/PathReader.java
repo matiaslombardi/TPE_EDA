@@ -39,7 +39,6 @@ public class PathReader {
 
     public Map<String, List<Stop>> readSubways() {
         System.out.println("Reading subways");
-        //List<Stop> stops = new ArrayList<>();
         Map<String, List<Stop>> map = new HashMap<>();
 
         String fileName = "src/main/resources/subte.csv";
@@ -48,8 +47,7 @@ public class PathReader {
             reader.readNext();
             while ((nextLine = reader.readNext()) != null) {
                 String line = nextLine[4];
-                Stop stop = new Stop(new Point(doubleFromString(nextLine[1]), doubleFromString(nextLine[0])), line, 0);
-                //stops.add(stop);
+                Stop stop = new Stop(new Point(doubleFromString(nextLine[1]), doubleFromString(nextLine[0])), line);
                 map.putIfAbsent(line, new ArrayList<>());
                 map.get(line).add(stop);
             }
@@ -61,9 +59,7 @@ public class PathReader {
     }
 
     private double doubleFromString(String str) {
-        double aux = Double.parseDouble(str);
-        return Math.round(aux*ROUNDER)/ROUNDER;
-        //return aux;
+        return Double.parseDouble(str);
     }
 
     public List<Trip> readSubwayRoutes(Map<String, List<Stop>> map) {

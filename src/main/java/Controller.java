@@ -37,6 +37,11 @@ public class Controller {
     pathFinder = new PathFinder(graph);
 
     System.out.println("Finished importing data");
+    /*int aristas = 0;
+    for (Node value : graph.stopsMap.values()) {
+      aristas += value.edges.size();
+    }
+    System.out.println(aristas);*/
   }
 
   public List<BusInPath> findPath(double fromLat, double fromLng, double toLat, double toLng) {

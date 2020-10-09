@@ -3,9 +3,6 @@ package model;
 import java.util.Objects;
 
 public class Stop {
-    static int EARTH_RADIUS = 6371;
-    //private final double lat;
-    //private final double lon;
     private final Point point;
     private final String line;
     private final int id;
@@ -14,6 +11,10 @@ public class Stop {
         this.point = point;
         this.line = line;
         this.id = id;
+    }
+
+    public Stop(Point point, String line) {
+        this(point, line, 0);
     }
 
     public double getLat() {
@@ -30,6 +31,14 @@ public class Stop {
 
     public Point getPoint() {
         return point;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public boolean sameLine(Stop other) {
+        return line.equals(other.getLine()) && id == other.id;
     }
 
     public double distanceTo(Stop other) {
