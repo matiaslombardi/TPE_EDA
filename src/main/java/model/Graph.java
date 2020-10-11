@@ -16,7 +16,6 @@ public class Graph {
 
     private final Grid[][] blocks;
     private final Map<Stop, Node> stopsMap = new HashMap<>();
-    //private final Map<String, List<Node>> lines = new HashMap<>();
 
     public Graph(List<Stop> stops) {
         blocks = new Grid[ROWS + 1][COLS + 1];
@@ -29,8 +28,6 @@ public class Graph {
                     blocks[row][col] = new Grid();
                 blocks[row][col].add(node);
                 stopsMap.put(stop, node);
-                /*lines.putIfAbsent(stop.getLine(), new ArrayList<>());
-                lines.get(stop.getLine()).add(node);*/
                 List<Node> closest = getClosest(stop.getPoint());
                 for (Node n : closest) {
                     Stop s = n.getStop();
@@ -143,13 +140,26 @@ public class Graph {
     public List<BusInPath> findPath(double fromLat, double fromLon, double toLat, double toLon) {
         Point start = new Point(fromLat, fromLon);
         Point end = new Point(toLat, toLon);
-        if (!inRange(start) || !inRange(end))
-            return new ArrayList<>();
+        if (!inRange(start) || !inRange(end)) {
+            BusInPath notInRange = new BusInPath("Not in range"
+                    , 0, 0 ,0, 0, 0);
+            return Collections.singletonList(notInRange);
+        }
 
-        if (start.distanceTo(end) < WALKABLE_DISTANCE)
-            return new ArrayList<>();
+        if (start.distanceTo(end) < WALKABLE_DISTANCE) {
+            BusInPath walking = new BusInPath("Walking"
+                    , 0, 0 ,0, 0, 0);
+            return Collections.singletonList(walking);
+        }
 
         List<Node> from = getClosest(start);
+
+        if(from.isEmpty()){
+            BusInPath noStops = new BusInPath("There are no stops in your surroundings"
+                    , 0, 0 ,0, 0, 0);
+            return Collections.singletonList(noStops);
+        }
+
         Map<Node, Double> initDist = new HashMap<>();
         for (Node node : from)
             initDist.put(node, node.distance + PENALTY * node.distance);

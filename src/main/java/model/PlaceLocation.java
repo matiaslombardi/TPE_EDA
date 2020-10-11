@@ -45,9 +45,15 @@ public class PlaceLocation implements Comparable<PlaceLocation> {
   @Override
   public int compareTo(PlaceLocation o) {
     int cmp = Double.compare(o.sim, sim);
-    if (cmp == 0)
+    if (cmp == 0) {
       cmp = name.compareTo(o.name);
-
+      if(cmp == 0) {
+        cmp = Double.compare(lat,o.lat);
+        if(cmp == 0){
+          cmp = Double.compare(lng, o.lng);
+        }
+      }
+    }
     return cmp;
   }
 }
