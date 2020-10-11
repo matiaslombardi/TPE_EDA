@@ -3,10 +3,10 @@ package model;
 import java.util.*;
 
 public class Graph {
-    private static final double LEFT = -58.962238;
-    private static final double TOP = -34.521517;
-    private static final double RIGHT = -57.5;
-    private static final double BOTTOM = -35.25;
+    private static final double LEFT = -58.56406105169795;
+    private static final double TOP = -34.494340556739054;
+    private static final double RIGHT = -58.31885987700156;
+    private static final double BOTTOM = -34.696731877952736;
     private static final int PENALTY = 10;
     private static final double WALKABLE_DISTANCE = 0.0055;
     private static final int ROWS = (int) (Math.abs(TOP - BOTTOM) / WALKABLE_DISTANCE);
