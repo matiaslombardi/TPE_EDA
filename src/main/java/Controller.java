@@ -2,12 +2,6 @@ import model.*;
 import readers.PathReader;
 import readers.PlacesReader;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -37,11 +31,6 @@ public class Controller {
     pathFinder = new PathFinder(graph);
 
     System.out.println("Finished importing data");
-    /*int aristas = 0;
-    for (Node value : graph.stopsMap.values()) {
-      aristas += value.edges.size();
-    }
-    System.out.println(aristas);*/
   }
 
   public List<BusInPath> findPath(double fromLat, double fromLng, double toLat, double toLng) {

@@ -6,8 +6,6 @@ public class Point {
     private final double lat;
     private final double lng;
 
-    private static final int EARTH_RADIUS = 6371;
-
     public Point(double lat, double lng) {
         this.lat = lat;
         this.lng = lng;

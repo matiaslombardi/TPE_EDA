@@ -14,11 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 public class PathReader {
-
-    private static final double ROUNDER = Math.pow(10, 6);
-
+    
     public List<Stop> readPaths() {
-        //Graph graph = new Graph();
         System.out.println("Reading stops");
         String fileName = "src/main/resources/paradas-de-colectivo.csv";
         List<Stop> stops = new ArrayList<>();
