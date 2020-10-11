@@ -98,8 +98,9 @@ public class Graph {
     private List<Node> getClosest(Point point) {
         int row = getRow(point);
         int col = getCol(point);
-        Grid aux = blocks[row][col];
         List<Node> toReturn = new ArrayList<>();
+        Grid aux = blocks[row][col];
+        if (!inRange(point)) return toReturn;
         if(aux != null)
             toReturn.addAll(aux.getNodes());
         if(row >= 1){
@@ -112,22 +113,22 @@ public class Graph {
         if(col >= 1)
             if(blocks[row][col - 1] != null)
                 toReturn.addAll(blocks[row][col - 1].getNodes());
-        if(row <= ROWS){
+        if(row < ROWS){
             if(blocks[row + 1][col] != null)
                 toReturn.addAll(blocks[row + 1][col].getNodes());
-            if(col <= COLS)
+            if(col < COLS)
                 if(blocks[row + 1][col + 1] != null)
                     toReturn.addAll(blocks[row + 1][col + 1].getNodes());
         }
-        if(row >= 1 && col <= COLS){
+        if(row >= 1 && col < COLS){
             if(blocks[row - 1][col + 1] != null)
                 toReturn.addAll(blocks[row - 1][col + 1].getNodes());
         }
-        if(row <= ROWS && col >= 1){
+        if(row < ROWS && col >= 1){
             if(blocks[row + 1][col - 1] != null)
                 toReturn.addAll(blocks[row + 1][col - 1].getNodes());
         }
-        if(col <= COLS)
+        if(col < COLS)
             if(blocks[row][col + 1] != null)
                 toReturn.addAll(blocks[row][col + 1].getNodes());
 
@@ -184,11 +185,8 @@ public class Graph {
             if (n.visited) continue;
             n.visited = true;
 
-            if(n.getStop().getLine().equals(FINISHED_PATH)) {
-                System.out.println("Entre");
-                System.out.println(n.from);
+            if(n.getStop().getLine().equals(FINISHED_PATH))
                 return n.from;
-            }
 
             if (end.distanceTo(n.getStop().getPoint()) < WALKABLE_DISTANCE) {
                 Node closePath = new Node(new Stop(end, FINISHED_PATH));
@@ -205,7 +203,7 @@ public class Graph {
 
                 if (newCost < to.distance) {
                     to.distance = newCost;
-                    to.from = new LinkedList<>(n.from);
+                    to.from = new LinkedList<>(n.from); // B
                     if(!to.from.isEmpty() && to.from.getLast().samePath(to.stop)){
                         BusInPath path = new BusInPath(to.from.getLast());
                         path.toLat = to.stop.getLat();
@@ -238,7 +236,7 @@ public class Graph {
     private boolean inRange(Point point){
         double lat = point.getLat();
         double lon = point.getLng();
-        return !(lat > TOP) && !(lat < BOTTOM) && !(lon < LEFT) && !(lon > RIGHT);
+        return (lat <= TOP) && (lat >= BOTTOM) && (lon >= LEFT) && (lon <= RIGHT);
     }
 
 }

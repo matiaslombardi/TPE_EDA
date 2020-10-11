@@ -50,7 +50,7 @@ public class PathFinderTest {
         Assertions.assertArrayEquals(l.toArray(), toCompare);
 
         //Fuera de rango
-        l = pathFinder.findPath(-50, -58.47,-34.62,-58.5);
+        l = pathFinder.findPath(-90, -70,-80,-58.5);
         toCompare = new BusInPath[]{new BusInPath("Not in range", 0, 0 ,0, 0, 0)};
         Assertions.assertArrayEquals(l.toArray(), toCompare);
 
@@ -60,7 +60,7 @@ public class PathFinderTest {
         Assertions.assertArrayEquals(l.toArray(), toCompare);
 
         //No hay paradas alrededor
-        l = pathFinder.findPath(-34.521517, -58.962238,-34.57,-58.4702);
+        l = pathFinder.findPath(-34.5, -58.32,-34.57,-58.4702);
         toCompare = new BusInPath[]{new BusInPath("There are no stops in your surroundings"
                 , 0, 0 ,0, 0, 0)};
         Assertions.assertArrayEquals(l.toArray(), toCompare);
